@@ -1,22 +1,25 @@
 class packet;
-    rand int val;
+    rand bit [7:0] val;
+	rand bit [3:0] delay;
 endclass
 
 class sender;
     mailbox mbx;
+	packet pkt;
         
     function new(mailbox mbx);
         this.mbx = mbx;
     endfunction //new()
 
     task run();
-        packet pkt;
+        
         for (int i = 0; i<10; i++) begin
-            #10;
             pkt = new();
             pkt.randomize();
-            this.mbx.put(pkt);
-            $display($time, ": send val=%d", pkt.val);    
+			
+			# pkt.delay;
+            mbx.put(pkt);
+            $display($time, ": send val=%d, delay=%d", pkt.val, pkt.delay);    
         end
         
     endtask
@@ -32,12 +35,12 @@ class receiver;
 
     task run();
 
-        int i;
+        packet pkt;
         int count = 0;
         forever begin
-            // this.mbx.get(i);
+            mbx.get(pkt);
             count += 1;
-            $display($time, ": receive i=%d", i);    
+            $display($time, ": receive val=%d", pkt.val);    
 
             if (count >= 10) begin
                 break;
@@ -54,6 +57,7 @@ module test_mailbox;
     mailbox mbx;
 
     initial begin
+		mbx = new();
         s_01 = new(mbx);
         r_01 = new(mbx);
 
